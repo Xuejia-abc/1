@@ -9,8 +9,16 @@
 
 ## Run
 
+推荐（无需手动设置 `PYTHONPATH`）：
+
 ```bash
-PYTHONPATH=src python -m life_assistant.server
+python run_server.py
+```
+
+可自定义端口：
+
+```bash
+python run_server.py --host 0.0.0.0 --port 8000
 ```
 
 默认启动在 `http://0.0.0.0:8000`，浏览器访问 `http://localhost:8000/` 查看可视化页面。
@@ -35,4 +43,25 @@ PYTHONPATH=src python -m life_assistant.server
 ```bash
 PYTHONPATH=src pytest
 python -m compileall src tests
+```
+
+
+## Troubleshooting
+
+- 网页打不开时先检查服务是否已启动：
+
+```bash
+curl -i http://127.0.0.1:8000/
+```
+
+- 若提示端口占用，换端口启动：
+
+```bash
+python run_server.py --port 8080
+```
+
+- 快速检查运行依赖是否正常：
+
+```bash
+python run_server.py --check
 ```

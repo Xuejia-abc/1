@@ -1,18 +1,29 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from .service import AssistantService
 
 service = AssistantService()
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 class ApiHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
+
+        if parsed.path == "/":
+            return self._serve_static("index.html")
+
+        if parsed.path.startswith("/static/"):
+            filename = parsed.path.removeprefix("/static/")
+            return self._serve_static(filename)
+
         if parsed.path == "/health":
             return self._json(HTTPStatus.OK, {"status": "ok"})
 
@@ -89,6 +100,22 @@ class ApiHandler(BaseHTTPRequestHandler):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_static(self, relative_path: str) -> None:
+        file_path = (STATIC_DIR / relative_path).resolve()
+        if STATIC_DIR.resolve() not in file_path.parents and file_path != STATIC_DIR.resolve():
+            return self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+
+        if not file_path.exists() or not file_path.is_file():
+            return self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
+
+        body = file_path.read_bytes()
+        content_type = mimetypes.guess_type(file_path.name)[0] or "application/octet-stream"
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)

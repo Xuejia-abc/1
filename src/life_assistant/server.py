@@ -78,7 +78,7 @@ class ApiHandler(BaseHTTPRequestHandler):
         favorite_id = parsed.path.rsplit("/", 1)[-1]
         data = self._read_json()
         try:
-            payload = service.rename_favorite(int(favorite_id), data["custom_tag"])
+            payload = service.rename_favorite(data["user_id"], int(favorite_id), data["custom_tag"])
         except (KeyError, ValueError):
             return self._json(HTTPStatus.BAD_REQUEST, {"error": "invalid_favorite_id"})
         return self._json(HTTPStatus.OK, payload)

@@ -36,7 +36,8 @@ class AssistantService:
             return self._serialize_record(record)
 
     def get_history(self, user_id: str) -> list[dict]:
-        history = [r for r in self._records.values() if r.user_id == user_id]
+        with self._lock:
+            history = [r for r in self._records.values() if r.user_id == user_id]
         history.sort(key=lambda r: r.created_at, reverse=True)
         return [self._serialize_record(item) for item in history]
 
@@ -55,10 +56,10 @@ class AssistantService:
             self._favorite_seq += 1
             return self._serialize_favorite(favorite)
 
-    def rename_favorite(self, favorite_id: int, custom_tag: str) -> dict:
+    def rename_favorite(self, user_id: str, favorite_id: int, custom_tag: str) -> dict:
         with self._lock:
             favorite = self._favorites.get(favorite_id)
-            if not favorite:
+            if not favorite or favorite.user_id != user_id:
                 raise KeyError("favorite_not_found")
             favorite.custom_tag = custom_tag
             return self._serialize_favorite(favorite)
